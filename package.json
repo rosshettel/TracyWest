@@ -1,0 +1,16 @@
+{
+  "name": "tracyjordan",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ross Hettel",
+  "license": "ISC",
+  "dependencies": {
+    "slack-winston": "0.0.4",
+    "twitter": "^1.2.5",
+    "winston": "^2.1.1"
+  }
+}
