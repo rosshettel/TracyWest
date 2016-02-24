@@ -9,6 +9,8 @@ var Twitter = require('twitter'),
     // kanyeTwitterID = '259495612'; //actually rosshettel
     kanyeTwitterID = '169686021';
 
+    logger.debug('TracyWest app started 🐻');
+
     twitter.stream('statuses/filter', {follow: kanyeTwitterID}, function (stream) {
         stream.on('data', function (tweet) {
             if (tweet.user && tweet.user.id && tweet.user.id.toString() === kanyeTwitterID) {
