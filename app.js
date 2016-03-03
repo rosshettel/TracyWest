@@ -11,6 +11,7 @@ var Twitter = require('twitter'),
 
     logger.debug('TracyWest app started 🐻');
 
+try {
     twitter.stream('statuses/filter', {follow: kanyeTwitterID}, function (stream) {
         stream.on('data', function (tweet) {
             if (tweet.user && tweet.user.id && tweet.user.id.toString() === kanyeTwitterID) {
@@ -31,3 +32,6 @@ var Twitter = require('twitter'),
             logger.error('Stream error', error);
         });
     });
+} catch (e) {
+    logger.error("Caught exception!", e);
+}
