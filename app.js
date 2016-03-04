@@ -1,16 +1,6 @@
-var cluster = require('cluster'),
-    logger = require('./logger');
+var ClusterWrapper = require('./clusterWrapper');
 
-if (cluster.isMaster) {
-    cluster.fork();
-
-    cluster.on('exit', function () {
-        logger.error('Cluster exiting');
-        cluster.fork();
-    });
-}
-
-if (cluster.isWorker) {
+ClusterWrapper.run(function () {
     var Twitter = require('twitter'),
         twitter = new Twitter({
             consumer_key: process.env.TWITTER_CONSUMER_KEY,
@@ -18,15 +8,11 @@ if (cluster.isWorker) {
             access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
             access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
         }),
+        logger = require('./logger'),
         // kanyeTwitterID = '259495612'; //actually rosshettel
         kanyeTwitterID = '169686021';
 
         logger.debug('TracyWest app started 🐻');
-
-        process.on('uncaughtException', function (err) {
-            logger.error('Uncaught Exception', err);
-            process.exit(1);
-        });
 
         twitter.stream('statuses/filter', {follow: kanyeTwitterID}, function (stream) {
             stream.on('data', function (tweet) {
@@ -48,4 +34,4 @@ if (cluster.isWorker) {
                 logger.error('Stream error', error);
             });
         });
-}
+});
