@@ -1,5 +1,5 @@
 var cluster = require('cluster'),
-    logger = require('logger');
+    logger = require('./logger');
 
 if (cluster.isMaster) {
     cluster.fork();
