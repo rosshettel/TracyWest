@@ -17,7 +17,7 @@ ClusterWrapper.run(function () {
         twitter.stream('statuses/filter', {follow: kanyeTwitterID}, function (stream) {
             stream.on('data', function (tweet) {
                 if (tweet.user && tweet.user.id && tweet.user.id.toString() === kanyeTwitterID) {
-                    logger.debug('new kanye tweet', tweet);
+                    // logger.debug('new kanye tweet', tweet);
 
                     var newTweetContent = "Liz Lemon, " + tweet.text;
                     logger.info('Posting new Kanye tweet', newTweetContent);
