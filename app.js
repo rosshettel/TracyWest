@@ -27,6 +27,9 @@ ClusterWrapper.run(function () {
                             logger.error('Error posting tweet:', err);
                         }
                     });
+                } else {
+                    logger.info('New tweet received, but not posting');
+                    console.log(JSON.stringify(tweet));
                 }
             });
 
