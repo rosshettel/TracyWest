@@ -20,21 +20,23 @@ ClusterWrapper.run(function () {
                     // logger.debug('new kanye tweet', tweet);
 
                     var newTweetContent = "Liz Lemon, " + tweet.text;
-                    logger.info('Posting new Kanye tweet', newTweetContent);
+                    logger.info('Posting new Kanye tweet: ', newTweetContent);
 
                     twitter.post('statuses/update', {status: newTweetContent}, function (err, tweet, response) {
                         if (err) {
                             logger.error('Error posting tweet:', err);
                         }
                     });
-                } else {
-                    logger.info('New tweet received, but not posting');
-                    console.log(JSON.stringify(tweet));
                 }
             });
 
             stream.on('error', function (error) {
                 logger.error('Stream error', error);
+            });
+
+            stream.on('end', function (response) {
+                logger.info('Stream end', response);
+                //maybe exit the process so we reconnect to the stream?
             });
         });
 });
