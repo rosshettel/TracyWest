@@ -36,6 +36,7 @@ ClusterWrapper.run(function () {
 
             stream.on('end', function (response) {
                 logger.info('Stream end', response);
+                process.exit(2);
                 //maybe exit the process so we reconnect to the stream?
             });
         });
