@@ -40,4 +40,16 @@ ClusterWrapper.run(function () {
                 //maybe exit the process so we reconnect to the stream?
             });
         });
+
+        twitter.stream('user', {}, function (stream) {
+            stream.on('data', function (data) {
+                logger.verbose('User data happened', data);
+
+                if (data.event && data.event === 'follow') {
+
+                    //data.event.source is following user, follow him back
+                    twitter.post('friendships/create')
+                }
+            })
+        })
 });
