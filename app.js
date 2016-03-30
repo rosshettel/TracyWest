@@ -9,16 +9,38 @@ ClusterWrapper.run(function () {
             access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
         }),
         logger = require('./logger'),
-        // kanyeTwitterID = '259495612'; //actually rosshettel
-        kanyeTwitterID = '169686021';
+        kanyeTwitterID = '169686021',
+        handleStreamEnd = function (response) {
+            if (response.status === 420) {
+                logger.info('Enhance our calm 🍁');
+                setTimeout(function () {
+                    logger.info('Calm enhanced, restarting');
+                    process.exit(420);
+                }, 1000 * 60 * 15);     //wait 15 minutes
+            } else {
+                logger.info('User stream end', response.statusMessage);
+                process.exit(2);
+            }
+        },
+        followBack = function (user) {
+            if (!user.following) {
+                logger.info('Following ' + user.screen_name);
+                twitter.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
+                    if (err) {
+                        logger.error('Error following ' + user.screen_name, err);
+                    }
+                });
+            } else {
+                logger.info('Already following ' + user.screen_name)
+            }
+
+        };
 
         logger.debug('TracyWest app started 🐻');
 
         twitter.stream('statuses/filter', {follow: kanyeTwitterID}, function (stream) {
             stream.on('data', function (tweet) {
                 if (tweet.user && tweet.user.id && tweet.user.id.toString() === kanyeTwitterID) {
-                    // logger.debug('new kanye tweet', tweet);
-
                     var newTweetContent = "Liz Lemon, " + tweet.text;
                     logger.info('Posting new Kanye tweet: ', newTweetContent);
 
@@ -35,38 +57,25 @@ ClusterWrapper.run(function () {
             });
 
             stream.on('end', function (response) {
-                logger.info('Stream end', response);
-                process.exit(2);
-                //maybe exit the process so we reconnect to the stream?
+                handleStreamEnd(response);
             });
         });
 
         twitter.stream('user', {}, function (stream) {
-            stream.on('data', function (data) {
-                if (data.event) {
-                    logger.verbose('Just received %s event', data.event);
+            stream.on('favorite', function (data) {
+                followBack(data.source);
+            });
 
-                    if (data.event === 'follow' || data.event === 'favorite') {
-                        logger.info('Following ', data.event.source)
-                        twitter.post('friendships/create', {user_id: data.event.source}, function (err, data, response) {
-                            if (err) {
-                                logger.error('Error following ' + data.event.source, err);
-                            }
-
-                            logger.debug('data', data);
-                            logger.debug('response', response);
-                        });
-                    }
-                }
+            stream.on('follow', function (data) {
+                followBack(data.source);
             });
 
             stream.on('error', function (error) {
-                logerr.error('Straem error', error);
+                logger.error('Stream error', error);
             });
 
             stream.on('end', function (response) {
-                logger.info('User stream end', response);
-                process.exit(3);
+                handleStreamEnd(response);
             });
         });
 });
