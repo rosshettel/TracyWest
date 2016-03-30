@@ -43,13 +43,30 @@ ClusterWrapper.run(function () {
 
         twitter.stream('user', {}, function (stream) {
             stream.on('data', function (data) {
-                logger.verbose('User data happened', data);
+                if (data.event) {
+                    logger.verbose('Just received %s event', data.event);
 
-                if (data.event && data.event === 'follow') {
+                    if (data.event === 'follow' || data.event === 'favorite') {
+                        logger.info('Following ', data.event.source)
+                        twitter.post('friendships/create', {user_id: data.event.source}, function (err, data, response) {
+                            if (err) {
+                                logger.error('Error following ' + data.event.source, err);
+                            }
 
-                    //data.event.source is following user, follow him back
-                    twitter.post('friendships/create')
+                            logger.debug('data', data);
+                            logger.debug('response', response);
+                        });
+                    }
                 }
-            })
-        })
+            });
+
+            stream.on('error', function (error) {
+                logerr.error('Straem error', error);
+            });
+
+            stream.on('end', function (response) {
+                logger.info('User stream end', response);
+                process.exit(3);
+            });
+        });
 });
