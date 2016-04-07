@@ -23,7 +23,7 @@ ClusterWrapper.run(function () {
             }
         },
         followBack = function (user) {
-            if (!user.following) {
+            if (!user.following && user.screen_name !== 'tracy__west') {
                 logger.info('Following ' + user.screen_name);
                 twitter.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
                     if (err) {
