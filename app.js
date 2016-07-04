@@ -42,6 +42,9 @@ ClusterWrapper.run(function () {
             stream.on('data', function (tweet) {
                 if (tweet.user && tweet.user.id && tweet.user.id.toString() === kanyeTwitterID) {
                     var newTweetContent = "Liz Lemon, " + tweet.text;
+                    if (newTweetContent.length > 140) {
+                        newTweetContent = newTweetContent.substr(0, 137) + '...';
+                    }
                     logger.info('Posting new Kanye tweet: ', newTweetContent);
 
                     twitter.post('statuses/update', {status: newTweetContent}, function (err, tweet, response) {
