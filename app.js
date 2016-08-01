@@ -1,31 +1,70 @@
-var ClusterWrapper = require('./clusterWrapper');
+var Twitter = require('twitter'),
+    logger = require('./logger.js'),
+    kanyeTwitterId = '169686021',
+    trumpTwitterId = '250738770',
+    TracyWest = function () {
+        var self = this;
 
-ClusterWrapper.run(function () {
-    var Twitter = require('twitter'),
-        twitter = new Twitter({
+        this.kanyeStream = null;
+        this.userStream = null;
+        this.trumpStream = null;
+
+        this.client = new Twitter({
             consumer_key: process.env.TWITTER_CONSUMER_KEY,
             consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
             access_token_key: process.env.TWITTER_ACCESS_TOKEN_KEY,
             access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
-        }),
-        logger = require('./logger'),
-        kanyeTwitterID = '169686021',
-        handleStreamEnd = function (response) {
-            if (response.status === 420) {
-                logger.info('Enhance our calm 🍁');
-                setTimeout(function () {
-                    logger.info('Calm enhanced, restarting');
-                    process.exit(420);
-                }, 1000 * 60 * 15);     //wait 15 minutes
-            } else {
-                logger.info('User stream end', response.statusMessage);
-                process.exit(2);
+        });
+
+        this.startStream = function () {
+            self.client.stream('statuses/filter', {follow: kanyeTwitterId}, function (stream) {
+                self.kanyeStream = stream;
+
+                stream.on('data', self.postKanyeTweet);
+                stream.on('error', self.streamError);
+                stream.on('end', self.resurrectStreams);
+            });
+
+            self.client.stream('user', {}, function (stream) {
+                self.userStream = stream;
+
+                stream.on('favorite', self.followBack);
+                stream.on('follow', self.followBack);
+                stream.on('error', self.streamError);
+                stream.on('end', self.resurrectStreams);
+            });
+
+            self.client.stream('statuses/filter', {follow: trumpTwitterId}, function (stream) {
+                self.trumpStream = stream;
+
+                stream.on('data', self.postTrumpReply)
+                stream.on('error', self.streamError);
+                stream.on('end', self.resurrectStreams);
+            })
+        };
+
+        this.postKanyeTweet = function (tweet) {
+            if (tweet.user && tweet.user.id && tweet.user.id.toString() === kanyeTwitterId) {
+                var newTweetContent = "Liz Lemon, " + tweet.text;
+                if (newTweetContent.length > 140) {
+                    newTweetContent = newTweetContent.substr(0, 137) + '...';
+                }
+                logger.info('Posting new Kanye tweet: ', newTweetContent);
+
+                self.client.post('statuses/update', {status: newTweetContent}, function (err, tweet, response) {
+                    if (err) {
+                        logger.error('Error posting tweet:', err);
+                    }
+                });
             }
-        },
-        followBack = function (user) {
+        };
+
+        this.followBack = function (data) {
+            var user = data.source;
+
             if (!user.following && user.screen_name !== 'tracy__west') {
                 logger.info('Following ' + user.screen_name);
-                twitter.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
+                self.client.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
                     if (err) {
                         logger.error('Error following ' + user.screen_name, err);
                     }
@@ -33,52 +72,39 @@ ClusterWrapper.run(function () {
             } else {
                 logger.info('Already following ' + user.screen_name)
             }
-
         };
 
-        logger.debug('TracyWest app started 🐻');
+        this.postTrumpReply = function (tweet) {
+            if (!tweet.user || tweet.user.screen_name !== 'readDonaldTrump') return;
 
-        twitter.stream('statuses/filter', {follow: kanyeTwitterID}, function (stream) {
-            stream.on('data', function (tweet) {
-                if (tweet.user && tweet.user.id && tweet.user.id.toString() === kanyeTwitterID) {
-                    var newTweetContent = "Liz Lemon, " + tweet.text;
-                    if (newTweetContent.length > 140) {
-                        newTweetContent = newTweetContent.substr(0, 137) + '...';
-                    }
-                    logger.info('Posting new Kanye tweet: ', newTweetContent);
-
-                    twitter.post('statuses/update', {status: newTweetContent}, function (err, tweet, response) {
-                        if (err) {
-                            logger.error('Error posting tweet:', err);
-                        }
-                    });
+            self.client.post('statuses/update', {
+                'in_reply_to_status_id': tweet.id_str,
+                status: '.@realDonaldTrump delete your account'
+            }, function (err) {
+                if (err) {
+                    logger.error('Error posting tweet:', err);
                 }
+                Logger.info('Replyde to Trump\'s tweet:', tweet.text);
             });
+        };
 
-            stream.on('error', function (error) {
-                logger.error('Stream error', error);
-            });
+        this.streamError = function (err) {
+            logger.error('Stream error', err);
+        };
 
-            stream.on('end', function (response) {
-                handleStreamEnd(response);
-            });
-        });
+        this.resurrectStreams = function () {
+            logger.info('Resurrecting streams');
 
-        twitter.stream('user', {}, function (stream) {
-            stream.on('favorite', function (data) {
-                followBack(data.source);
-            });
+            self.kanyeStream = null;
+            self.userStream = null;
+            self.trumpStream = null;
 
-            stream.on('follow', function (data) {
-                followBack(data.source);
-            });
+            setTimeout(function () {
+                self.startStream();
+            }, 1000 * 60 * 5);  // wait 5 minutes
+        };
+    },
+    app = new TracyWest();
 
-            stream.on('error', function (error) {
-                logger.error('Stream error', error);
-            });
-
-            stream.on('end', function (response) {
-                handleStreamEnd(response);
-            });
-        });
-});
+logger.info('TracyWest app started 🐻');
+app.startStream();
