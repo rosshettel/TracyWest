@@ -16,7 +16,9 @@ var Twitter = require('twitter'),
             access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
         });
 
-        this.startStream = function () {
+        this.startStreams = function () {
+            logger.info('TracyWest listening to streams 🐻');
+
             self.client.stream('statuses/filter', {follow: kanyeTwitterId}, function (stream) {
                 self.kanyeStream = stream;
 
@@ -40,7 +42,7 @@ var Twitter = require('twitter'),
                 stream.on('data', self.postTrumpReply)
                 stream.on('error', self.streamError);
                 stream.on('end', self.resurrectStreams);
-            })
+            });
         };
 
         this.postKanyeTweet = function (tweet) {
@@ -84,27 +86,31 @@ var Twitter = require('twitter'),
                 if (err) {
                     logger.error('Error posting tweet:', err);
                 }
-                Logger.info('Replyde to Trump\'s tweet:', tweet.text);
+                Logger.info('Replied to Trump\'s tweet:', tweet.text);
             });
         };
 
         this.streamError = function (err) {
-            logger.error('Stream error', err);
+            // logger.error('Stream error', err);
         };
 
-        this.resurrectStreams = function () {
-            logger.info('Resurrecting streams');
+        this.resurrectStreams = function (res) {
+            logger.info('Resurrecting streams -', res.statusMessage);
 
             self.kanyeStream = null;
             self.userStream = null;
             self.trumpStream = null;
 
-            setTimeout(function () {
-                self.startStream();
-            }, 1000 * 60 * 5);  // wait 5 minutes
+            if (res.statusCode === 420) {
+                logger.info('Enhance our calm 🍁');
+                setTimeout(function () {
+                    self.startStreams();
+                }, 1000 * 60 * 1);  // wait 1 minute
+            } else {
+                self.startStreams();
+            }
         };
     },
     app = new TracyWest();
 
-logger.info('TracyWest app started 🐻');
-app.startStream();
+app.startStreams();
