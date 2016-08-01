@@ -19,30 +19,42 @@ var Twitter = require('twitter'),
         this.startStreams = function () {
             logger.info('TracyWest listening to streams 🐻');
 
-            self.client.stream('statuses/filter', {follow: kanyeTwitterId}, function (stream) {
-                self.kanyeStream = stream;
+            if (!self.kanyeStream) {
+                self.client.stream('statuses/filter', {follow: kanyeTwitterId}, function (stream) {
+                    self.kanyeStream = stream;
 
-                stream.on('data', self.postKanyeTweet);
-                stream.on('error', self.streamError);
-                stream.on('end', self.resurrectStreams);
-            });
+                    stream.on('data', self.postKanyeTweet);
+                    stream.on('error', self.streamError);
+                    stream.on('end', function (res) {
+                        self.resurrectStreams(res, 'kanyeStream');
+                    });
+                });
+            }
 
-            self.client.stream('user', {}, function (stream) {
-                self.userStream = stream;
+            if (!self.userStream) {
+                self.client.stream('user', {}, function (stream) {
+                    self.userStream = stream;
 
-                stream.on('favorite', self.followBack);
-                stream.on('follow', self.followBack);
-                stream.on('error', self.streamError);
-                stream.on('end', self.resurrectStreams);
-            });
+                    stream.on('favorite', self.followBack);
+                    stream.on('follow', self.followBack);
+                    stream.on('error', self.streamError);
+                    stream.on('end', function (res) {
+                        self.resurrectStreams(res, 'userStream');
+                    });
+                });
+            }
 
-            self.client.stream('statuses/filter', {follow: trumpTwitterId}, function (stream) {
-                self.trumpStream = stream;
+            if (!self.trumpStream) {
+                self.client.stream('statuses/filter', {follow: trumpTwitterId}, function (stream) {
+                    self.trumpStream = stream;
 
-                stream.on('data', self.postTrumpReply);
-                stream.on('error', self.streamError);
-                stream.on('end', self.resurrectStreams);
-            });
+                    stream.on('data', self.postTrumpReply);
+                    stream.on('error', self.streamError);
+                    stream.on('end', function (res) {
+                        self.resurrectStreams(res, 'trumpStream');
+                    });
+                });
+            }
         };
 
         this.postKanyeTweet = function (tweet) {
@@ -94,18 +106,16 @@ var Twitter = require('twitter'),
             // logger.error('Stream error', err);
         };
 
-        this.resurrectStreams = function (res) {
-            logger.info('Resurrecting streams -', res.statusMessage);
+        this.resurrectStreams = function (res, stream) {
+            logger.info('Resurrecting ' + stream + ' stream - ', res.statusMessage);
 
-            self.kanyeStream = null;
-            self.userStream = null;
-            self.trumpStream = null;
+            self[stream] = null;
 
             if (res.statusCode === 420) {
                 logger.info('Enhance our calm 🍁');
                 setTimeout(function () {
                     self.startStreams();
-                }, 1000 * 60 * 1);  // wait 1 minute
+                }, 1000 * 60 * 2);  // wait 2 minutes
             } else {
                 self.startStreams();
             }
