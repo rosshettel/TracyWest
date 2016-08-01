@@ -1,7 +1,7 @@
 var Twitter = require('twitter'),
     logger = require('./logger.js'),
     kanyeTwitterId = '169686021',
-    trumpTwitterId = '250738770',
+    trumpTwitterId = '25073877',
     TracyWest = function () {
         var self = this;
 
@@ -39,7 +39,7 @@ var Twitter = require('twitter'),
             self.client.stream('statuses/filter', {follow: trumpTwitterId}, function (stream) {
                 self.trumpStream = stream;
 
-                stream.on('data', self.postTrumpReply)
+                stream.on('data', self.postTrumpReply);
                 stream.on('error', self.streamError);
                 stream.on('end', self.resurrectStreams);
             });
