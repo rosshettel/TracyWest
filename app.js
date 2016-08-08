@@ -90,22 +90,19 @@ var Twitter = require('twitter'),
 
         this.postTrumpReply = function (tweet) {
             if (tweet.user && tweet.user.id_str === trumpTwitterId) {
-                logger.debug('trump tweet', {
-                    user: tweet.user,
-                    text: tweet.text
+                self.client.post('statuses/update', {
+                    'in_reply_to_status_id': tweet.id_str,
+                    status: '.@realDonaldTrump delete your account'
+                }, function (err) {
+                    if (err) {
+                        logger.error('Error posting tweet:', err);
+                    }
+                    Logger.info('Replied to Trump\'s tweet:', {
+                        text: tweet.text,
+                        retweeted: tweet.retweeted
+                    });
                 });
             }
-            if (!tweet.user || tweet.user.screen_name !== 'readDonaldTrump') return;
-
-            self.client.post('statuses/update', {
-                'in_reply_to_status_id': tweet.id_str,
-                status: '.@realDonaldTrump delete your account'
-            }, function (err) {
-                if (err) {
-                    logger.error('Error posting tweet:', err);
-                }
-                Logger.info('Replied to Trump\'s tweet:', tweet.text);
-            });
         };
 
         this.streamError = function (err) {
