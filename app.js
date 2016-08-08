@@ -89,10 +89,12 @@ var Twitter = require('twitter'),
         };
 
         this.postTrumpReply = function (tweet) {
-            logger.debug('trump tweet', {
-                user: tweet.user,
-                text: tweet.text
-            });
+            if (tweet.user && tweet.user.id_str === trumpTwitterId) {
+                logger.debug('trump tweet', {
+                    user: tweet.user,
+                    text: tweet.text
+                });
+            }
             if (!tweet.user || tweet.user.screen_name !== 'readDonaldTrump') return;
 
             self.client.post('statuses/update', {
