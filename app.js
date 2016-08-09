@@ -1,6 +1,7 @@
 var Twitter = require('twitter'),
     logger = require('./logger.js'),
     kanyeTwitterId = '169686021',
+    tracyTwitterId = '702579538362966016',
     trumpTwitterId = '25073877',
     TracyWest = function () {
         var self = this;
@@ -76,7 +77,7 @@ var Twitter = require('twitter'),
         this.followBack = function (data) {
             var user = data.source;
 
-            if (!user.following && user.screen_name !== 'tracy__west') {
+            if (!user.following && user.id_str !== tracyTwitterId) {
                 logger.info('Following ' + user.screen_name);
                 self.client.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
                     if (err) {
@@ -92,7 +93,7 @@ var Twitter = require('twitter'),
             if (tweet.user && tweet.user.id_str === trumpTwitterId) {
                 self.client.post('statuses/update', {
                     'in_reply_to_status_id': tweet.id_str,
-                    status: '.@realDonaldTrump delete your account'
+                    status: '@realDonaldTrump delete your account'
                 }, function (err) {
                     if (err) {
                         logger.error('Error posting tweet:', err);
