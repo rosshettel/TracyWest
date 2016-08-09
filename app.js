@@ -97,7 +97,7 @@ var Twitter = require('twitter'),
                     if (err) {
                         logger.error('Error posting tweet:', err);
                     }
-                    Logger.info('Replied to Trump\'s tweet:', {
+                    logger.info('Replied to Trump\'s tweet:', {
                         text: tweet.text,
                         retweeted: tweet.retweeted
                     });
