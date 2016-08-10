@@ -80,16 +80,17 @@ var Twitter = require('twitter'),
             logger.debug('followBack', {
                 screen_name: user.screen_name,
                 following: user.following,
-                isUs: user.id_str === tracyTwitterId
+                isUs: user.id_str === tracyTwitterId,
+                minutes: minutes
             });
 
             if (!user.following && user.id_str !== tracyTwitterId) {
-                logger.info('Following ' + user.screen_name + ' in ' + minutes + ' minutes');
                 setTimeout(function () {
                     self.client.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
                         if (err) {
                             logger.error('Error following ' + user.screen_name, err);
                         }
+                        logger.info('Followed ' + user.screen_name);
                     });
                 }, 1000 * 60 * minutes);
             }
