@@ -77,6 +77,8 @@ var Twitter = require('twitter'),
             var user = data.source,
                 minutes = Math.floor(Math.random() * (25 - 5) + 5);
 
+            logger.debug('followBack', data.source.screen_name);
+
             if (!user.following && user.id_str !== tracyTwitterId) {
                 logger.info('Following ' + user.screen_name + ' in ' + delay + ' minutes');
                 setTimeout(function () {
