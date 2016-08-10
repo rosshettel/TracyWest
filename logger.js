@@ -16,7 +16,7 @@ var winston = require('winston'),
                 webhook_url: slackWebhook,
                 channel: 'tracywest-logs',
                 silent: slackWebhook === 'n/a',
-                level: 'debug'
+                level: 'info'
             })
         ]
     });

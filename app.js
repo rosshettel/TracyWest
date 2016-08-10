@@ -18,8 +18,6 @@ var Twitter = require('twitter'),
         });
 
         this.startStreams = function () {
-            logger.info('TracyWest listening to streams 🐻');
-
             if (!self.kanyeStream) {
                 self.client.stream('statuses/filter', {follow: kanyeTwitterId}, function (stream) {
                     self.kanyeStream = stream;
@@ -38,6 +36,7 @@ var Twitter = require('twitter'),
 
                     stream.on('favorite', self.followBack);
                     stream.on('follow', self.followBack);
+                    stream.on('quoted_tweet', self.followBack);
                     stream.on('error', self.streamError);
                     stream.on('end', function (res) {
                         self.resurrectStreams(res, 'userStream');
@@ -75,17 +74,18 @@ var Twitter = require('twitter'),
         };
 
         this.followBack = function (data) {
-            var user = data.source;
+            var user = data.source,
+                minutes = Math.floor(Math.random() * (25 - 5) + 5);
 
             if (!user.following && user.id_str !== tracyTwitterId) {
-                logger.info('Following ' + user.screen_name);
-                self.client.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
-                    if (err) {
-                        logger.error('Error following ' + user.screen_name, err);
-                    }
-                });
-            } else {
-                logger.info('Already following ' + user.screen_name)
+                logger.info('Following ' + user.screen_name + ' in ' + delay + ' minutes');
+                setTimeout(function () {
+                    self.client.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
+                        if (err) {
+                            logger.error('Error following ' + user.screen_name, err);
+                        }
+                    });
+                }, 1000 * 60 * minutes);
             }
         };
 
@@ -98,10 +98,7 @@ var Twitter = require('twitter'),
                     if (err) {
                         logger.error('Error posting tweet:', err);
                     }
-                    logger.info('Replied to Trump\'s tweet:', {
-                        text: tweet.text,
-                        retweeted: tweet.retweeted
-                    });
+                    logger.info('Replied to Trump\'s tweet: ' + tweet.text);
                 });
             }
         };
@@ -111,12 +108,12 @@ var Twitter = require('twitter'),
         };
 
         this.resurrectStreams = function (res, stream) {
-            logger.info('Resurrecting ' + stream + ' stream - ', res.statusMessage);
+            logger.debug('Resurrecting ' + stream + ' stream - ', res.statusMessage);
 
             self[stream] = null;
 
             if (res.statusCode === 420) {
-                logger.info('Enhance our calm 🍁');
+                logger.info('Enhance our calm 🍁 - ' + stream);
                 setTimeout(function () {
                     self.startStreams();
                 }, 1000 * 60 * 2);  // wait 2 minutes
@@ -128,3 +125,5 @@ var Twitter = require('twitter'),
     app = new TracyWest();
 
 app.startStreams();
+
+logger.info('TracyWest app started 🐻');
