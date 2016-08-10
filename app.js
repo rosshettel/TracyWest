@@ -84,7 +84,7 @@ var Twitter = require('twitter'),
             });
 
             if (!user.following && user.id_str !== tracyTwitterId) {
-                logger.info('Following ' + user.screen_name + ' in ' + delay + ' minutes');
+                logger.info('Following ' + user.screen_name + ' in ' + minutes + ' minutes');
                 setTimeout(function () {
                     self.client.post('friendships/create', {screen_name: user.screen_name}, function (err, data, response) {
                         if (err) {
