@@ -1,5 +1,7 @@
 var Twitter = require('twitter'),
     logger = require('./logger.js'),
+    limit = require('simple-rate-limiter'),
+    async = require('async'),
     kanyeTwitterId = '169686021',
     tracyTwitterId = '702579538362966016',
     trumpTwitterId = '25073877',
@@ -97,10 +99,16 @@ var Twitter = require('twitter'),
         };
 
         this.postTrumpReply = function (tweet) {
+            var responses = [
+                'delete your account',
+                'show us your tax returns!',
+                '#JustMakeIndianaGreatAgainFirst'
+            ];
+
             if (tweet.user && tweet.user.id_str === trumpTwitterId) {
                 self.client.post('statuses/update', {
                     'in_reply_to_status_id': tweet.id_str,
-                    status: '@realDonaldTrump delete your account'
+                    status: '@realDonaldTrump ' + responses[Math.floor(Math.random() * responses.length)]
                 }, function (err) {
                     if (err) {
                         logger.error('Error posting tweet:', err);
@@ -128,9 +136,66 @@ var Twitter = require('twitter'),
                 self.startStreams();
             }
         };
+
+        this.unfollowIfNotFollowing = function () {
+            var followCountBefore = 0,
+                followCountAfter = 0,
+                followersChunked = [],
+                unfollowUser = limit(function (user_id) {
+                    self.client.post('friendships/destroy', {user_id: user_id}, function (err, data, res) {
+                        if (err) {
+                            logger.error('Error unfollowing', err);
+                        }
+                        followCountAfter--;
+                    })
+                }).to(1).per(1000),
+                getFriendships = limit(function (followers) {
+                    self.client.get('friendships/lookup', {user_id: followers.join(',')}, function (err, data, res) {
+                        if (err) {
+                            logger.error('Error getting friendships', err);
+                        }
+
+                        //now loop through and unfriend people who arent following us
+                        data.forEach(function (friendship) {
+                            if (friendship.connections.indexOf('followed_by') == -1) {
+                                logger.debug('Unfollowing ' + friendship.screen_name, JSON.stringify(friendship.connections));
+                                unfollowUser(friendship.id_str);
+                            }
+                        });
+                    });
+                }).to(1).per(1000 * 60);    //once per minute
+
+            self.client.get('friends/ids', {user_id: tracyTwitterId, stringify_ids: true}, function (err, data, res) {
+                if (err) {
+                    logger.error('Error getting friends list', err);
+                }
+                followCountBefore = data.ids.length;
+                followCountAfter = data.ids.length;
+                logger.debug('Follow count before:', followCountBefore);
+
+                while (data.ids.length > 0) {
+                    followersChunked.push(data.ids.splice(0, 100));
+                }
+
+                async.each(
+                    followersChunked,
+                    function (followers) {
+                        getFriendships(followers);
+                    },
+                    function () {
+                        logger.info("Pruned following list from %d to %d", followCountBefore, followCountAfter);
+                    }
+                );
+            });
+        };
     },
     app = new TracyWest();
 
 app.startStreams();
+
+app.unfollowIfNotFollowing();
+setTimeout(function () {
+    self.unfollowIfNotFollowing();
+}, 1000 * 60 * 60 * 12);    //every 12 hours
 
 logger.info('TracyWest app started 🐻');
