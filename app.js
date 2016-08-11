@@ -103,7 +103,8 @@ var Twitter = require('twitter'),
                 'delete your account',
                 'show us your tax returns!',
                 '#JustMakeIndianaGreatAgainFirst',
-                'many people have been saying you donated to #NAMBLA'
+                'many people have been saying you donated to #NAMBLA',
+                'Donald Trump doesn\'t care about black people!'
             ];
 
             if (tweet.user && tweet.user.id_str === trumpTwitterId) {
