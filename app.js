@@ -102,7 +102,8 @@ var Twitter = require('twitter'),
             var responses = [
                 'delete your account',
                 'show us your tax returns!',
-                '#JustMakeIndianaGreatAgainFirst'
+                '#JustMakeIndianaGreatAgainFirst',
+                'many people have been saying you donated to #NAMBLA'
             ];
 
             if (tweet.user && tweet.user.id_str === trumpTwitterId) {
