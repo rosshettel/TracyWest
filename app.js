@@ -125,7 +125,7 @@ var Twitter = require('twitter'),
         };
 
         this.resurrectStreams = function (res, stream) {
-            logger.debug('Resurrecting ' + stream + ' stream - ', res.statusMessage);
+            logger.debug('Resurrecting ' + stream + ' stream - ', res.statusCode + ' ' + res.statusMessage);
 
             self[stream] = null;
 
@@ -134,6 +134,8 @@ var Twitter = require('twitter'),
                 setTimeout(function () {
                     self.startStreams();
                 }, 1000 * 60 * 2);  // wait 2 minutes
+            } else if (res.statusCode === 401) {
+                logger.error('Access tokens revoked, not doing anything.');
             } else {
                 self.startStreams();
             }
@@ -195,7 +197,7 @@ var Twitter = require('twitter'),
 
 app.startStreams();
 
-app.unfollowIfNotFollowing();
+// app.unfollowIfNotFollowing();
 setTimeout(function () {
     self.unfollowIfNotFollowing();
 }, 1000 * 60 * 60 * 12);    //every 12 hours
