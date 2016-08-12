@@ -151,8 +151,8 @@ var Twitter = require('twitter'),
                             logger.error('Error unfollowing', err);
                         }
                         followCountAfter--;
-                    })
-                }).to(1).per(1000),
+                    });
+                }).to(1).per(1000 * 60),    //once every minute
                 getFriendships = limit(function (followers) {
                     self.client.get('friendships/lookup', {user_id: followers.join(',')}, function (err, data, res) {
                         if (err) {
@@ -167,7 +167,7 @@ var Twitter = require('twitter'),
                             }
                         });
                     });
-                }).to(1).per(1000 * 60);    //once per minute
+                }).to(1).per(1000 * 60 * 3);    //once every 3 minutes
 
             self.client.get('friends/ids', {user_id: tracyTwitterId, stringify_ids: true}, function (err, data, res) {
                 if (err) {
@@ -197,9 +197,8 @@ var Twitter = require('twitter'),
 
 app.startStreams();
 
-// app.unfollowIfNotFollowing();
 setTimeout(function () {
     self.unfollowIfNotFollowing();
-}, 1000 * 60 * 60 * 12);    //every 12 hours
+}, 1000 * 60 * 60 * 24);    //every 24 hours
 
 logger.info('TracyWest app started 🐻');
